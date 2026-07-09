@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "367980621544",
+    "project_id": "fixup-app-uad",
+    "storage_bucket": "fixup-app-uad.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:367980621544:android:41262476c7563baaad235d",
+        "android_client_info": {
+          "package_name": "com.example.fixup_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB_VpsarJPy3tuml3-7gLnMkjbP5Gc45Do"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
