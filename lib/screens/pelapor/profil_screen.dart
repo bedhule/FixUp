@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart'; // TAMBAHAN
 import '../../theme/app_theme.dart';
 import '../../widgets/common_widgets.dart';
 import '../../firebase/firebase_helper.dart';
+import '../../providers/notification_provider.dart'; // TAMBAHAN
 import 'riwayat_screen.dart';
 import 'notif_screen.dart';
 import 'account_settings_screen.dart';
@@ -82,6 +84,8 @@ class _ProfilScreenState extends State<ProfilScreen> {
     final avatarSize =
         (MediaQuery.of(context).size.width * 0.28).clamp(80.0, 120.0);
     const headerRatio = 0.35;
+    // TAMBAHAN: ambil angka unread yang sama persis dengan yang dipakai Home Screen
+    final unreadCount = context.watch<NotificationProvider>().unreadCount;
 
     if (_loading) {
       return Scaffold(
@@ -210,7 +214,8 @@ class _ProfilScreenState extends State<ProfilScreen> {
                               context,
                               MaterialPageRoute(
                                   builder: (_) => const NotifScreen())),
-                          badge: '2',
+                          // GANTI: dari badge: '2' (hardcode) menjadi angka asli, null kalau 0
+                          badge: unreadCount > 0 ? '$unreadCount' : null,
                         ),
                         const Divider(height: 1, color: AppColors.line),
                         _MenuItem(

@@ -1,13 +1,22 @@
 import 'package:flutter/foundation.dart';
 import '../models/models.dart';
 import '../firebase/firebase_helper.dart';
+import 'notification_provider.dart'; // TAMBAHAN
 
 class ReportProvider with ChangeNotifier {
   List<Report> _reports = [];
   bool _isLoading = true;
 
+  // TAMBAHAN: referensi ke NotificationProvider, di-set dari main.dart lewat ProxyProvider
+  NotificationProvider? _notificationProvider;
+
   List<Report> get reports => _reports;
   bool get isLoading => _isLoading;
+
+  // TAMBAHAN: dipanggil otomatis oleh ChangeNotifierProxyProvider di main.dart
+  void updateNotificationProvider(NotificationProvider notificationProvider) {
+    _notificationProvider = notificationProvider;
+  }
 
   ReportProvider() {
     _init();
@@ -42,6 +51,7 @@ class ReportProvider with ChangeNotifier {
   Future<void> addReport(Report report) async {
     try {
       await FirebaseHelper().saveReport(report);
+      _notificationProvider?.notifyReportCreated(report); // TAMBAHAN
     } catch (e) {
       rethrow;
     }
@@ -49,7 +59,15 @@ class ReportProvider with ChangeNotifier {
 
   Future<void> updateReport(Report report) async {
     try {
+      // TAMBAHAN: simpan status lama sebelum di-update, untuk dibandingkan setelahnya
+      final oldReport = _reports.firstWhere(
+        (r) => r.id == report.id,
+        orElse: () => report,
+      );
       await FirebaseHelper().updateReport(report);
+      if (oldReport.status != report.status) {
+        _notificationProvider?.notifyStatusChanged(report, oldReport.status); // TAMBAHAN
+      }
     } catch (e) {
       rethrow;
     }

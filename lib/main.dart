@@ -41,8 +41,20 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ReportProvider()),
+        // NotificationProvider harus dideklarasikan lebih dulu,
+        // karena ReportProvider (di bawah) bergantung padanya.
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
+
+        // ReportProvider sekarang jadi ChangeNotifierProxyProvider agar
+        // bisa memanggil NotificationProvider saat ada laporan baru/berubah status.
+        // Logic pembuatan ReportProvider() aslinya tidak berubah.
+        ChangeNotifierProxyProvider<NotificationProvider, ReportProvider>(
+          create: (_) => ReportProvider(),
+          update: (_, notificationProvider, reportProvider) {
+            reportProvider!.updateNotificationProvider(notificationProvider);
+            return reportProvider;
+          },
+        ),
       ],
       child: const FixUpApp(),
     ),

@@ -6,7 +6,6 @@ import '../../models/models.dart';
 import '../../widgets/common_widgets.dart';
 import '../../widgets/photo_preview_screen.dart';
 import '../../providers/report_provider.dart';
-import '../../providers/notification_provider.dart';
 
 class SarprasDetailScreen extends StatefulWidget {
   final Report report;
@@ -40,8 +39,6 @@ class _SarprasDetailScreenState extends State<SarprasDetailScreen> {
     setState(() => _saving = true);
     try {
       final provider = context.read<ReportProvider>();
-      final notifProvider = context.read<NotificationProvider>();
-      final oldStatus = widget.report.status;
       final updatedHistory = List<StatusHistory>.from(widget.report.history);
       if (_selectedStatus != widget.report.status) {
         updatedHistory.add(StatusHistory(
@@ -56,9 +53,9 @@ class _SarprasDetailScreenState extends State<SarprasDetailScreen> {
         status: _selectedStatus,
         history: updatedHistory,
       );
-      if (_selectedStatus != oldStatus) {
-        notifProvider.notifyStatusChanged(updatedReport, oldStatus);
-      }
+      // Notifikasi status sekarang otomatis dikirim dari dalam
+      // ReportProvider.updateReport() — tidak perlu dipanggil manual di sini lagi,
+      // supaya tidak terkirim dua kali dan supaya konsisten untuk semua layar.
       await provider.updateReport(updatedReport);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

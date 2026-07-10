@@ -30,15 +30,17 @@ class NotificationProvider with ChangeNotifier {
     }
   }
 
-  void addNotification(AppNotification notif) {
-    final uid = FirebaseHelper().currentUser?.uid;
-    if (uid != null) {
+  void addNotification(AppNotification notif, {String? targetUserId}) {
+    // FIX: kirim ke targetUserId (misalnya pemilik laporan) kalau diberikan,
+    // jangan selalu pakai currentUser (bisa jadi Sarpras yang sedang login, bukan Pelapor).
+    final destinationUid = targetUserId ?? FirebaseHelper().currentUser?.uid;
+    if (destinationUid != null) {
       FirebaseHelper().addNotification(
         AppNotification(
           title: notif.title,
           message: notif.message,
           time: notif.time,
-          userId: uid,
+          userId: destinationUid,
         ),
       );
     } else {
@@ -74,9 +76,11 @@ class NotificationProvider with ChangeNotifier {
       FirebaseHelper().markAllNotificationsRead(uid);
     } else {
       final updated = _notifications.map((n) => AppNotification(
+        id: n.id, // FIX: pertahankan id asli, jangan buat id baru
         title: n.title,
         message: n.message,
         time: n.time,
+        userId: n.userId, // FIX: pertahankan userId asli
         isRead: true,
       )).toList();
       _notifications = updated;
@@ -103,6 +107,9 @@ class NotificationProvider with ChangeNotifier {
         message: msg,
         time: DateTime.now(),
       ),
+      // FIX: notifikasi harus sampai ke Pelapor (pemilik laporan),
+      // bukan ke Sarpras yang sedang login dan mengubah status.
+      targetUserId: report.userId,
     );
   }
 }

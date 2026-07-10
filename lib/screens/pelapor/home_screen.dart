@@ -6,6 +6,7 @@ import '../../widgets/common_widgets.dart';
 import '../../firebase/firebase_helper.dart';
 import 'package:provider/provider.dart';
 import '../../providers/report_provider.dart';
+import '../../providers/notification_provider.dart'; // TAMBAHAN
 import 'lapor_screen.dart';
 import 'detail_screen.dart';
 import 'riwayat_screen.dart';
@@ -188,7 +189,7 @@ class _NavIcon extends StatelessWidget {
 
 // ----------------------------------------------------------------------
 // HOME CONTENT — logic (load user, provider reports, navigasi) tidak diubah,
-// hanya tampilannya yang disamakan dengan mockup.
+// hanya tampilannya yang disamakan dengan mockup + badge notifikasi.
 // ----------------------------------------------------------------------
 class _HomeContent extends StatefulWidget {
   const _HomeContent();
@@ -232,6 +233,7 @@ class _HomeContentState extends State<_HomeContent> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ReportProvider>();
+    final notifProvider = context.watch<NotificationProvider>(); // TAMBAHAN
     final recentReports = provider.reports.take(3).toList();
 
     // Dihitung otomatis dari data yang ada — kalau belum ada laporan, hasilnya 0.
@@ -443,8 +445,8 @@ class _HomeContentState extends State<_HomeContent> {
                                 icon: Icons.notifications_rounded,
                                 bgColor: const Color(0xFF14B8A6),
                                 label: 'Notifikasi',
-                                showDot:
-                                    true, // ganti ke count asli kalau sudah ada provider notifikasi
+                                // GANTI: dari showDot: true menjadi angka asli unreadCount
+                                badgeCount: notifProvider.unreadCount,
                                 onTap: () {
                                   Navigator.push(
                                       context,
@@ -547,19 +549,20 @@ class _StatColumn extends StatelessWidget {
 }
 
 // Tile kotak warna solid + ikon putih, sama persis seperti referensi gambar.
+// GANTI: showDot (boolean) menjadi badgeCount (int) supaya bisa tampilkan angka asli.
 class _QuickItem extends StatelessWidget {
   final IconData icon;
   final Color bgColor;
   final String label;
   final VoidCallback onTap;
-  final bool showDot;
+  final int badgeCount;
 
   const _QuickItem({
     required this.icon,
     required this.bgColor,
     required this.label,
     required this.onTap,
-    this.showDot = false,
+    this.badgeCount = 0,
   });
 
   @override
@@ -587,17 +590,29 @@ class _QuickItem extends StatelessWidget {
                 ),
                 child: Icon(icon, color: Colors.white, size: 24),
               ),
-              if (showDot)
+              if (badgeCount > 0)
                 Positioned(
-                  top: -3,
-                  right: -3,
+                  top: -6,
+                  right: -6,
                   child: Container(
-                    width: 14,
-                    height: 14,
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                    constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
                     decoration: BoxDecoration(
                       color: const Color(0xFFDC2626),
-                      shape: BoxShape.circle,
+                      shape: badgeCount > 9 ? BoxShape.rectangle : BoxShape.circle,
+                      borderRadius: badgeCount > 9 ? BorderRadius.circular(9) : null,
                       border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: Center(
+                      child: Text(
+                        badgeCount > 99 ? '99+' : '$badgeCount',
+                        style: GoogleFonts.inter(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          height: 1,
+                        ),
+                      ),
                     ),
                   ),
                 ),
