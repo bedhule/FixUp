@@ -72,6 +72,7 @@ class Report {
   final String? feedback;
   final String? reporterName;
   final List<StatusHistory> history;
+  
 
   Report({
     required this.id,
@@ -92,6 +93,8 @@ class Report {
     this.feedback,
     this.reporterName,
     required this.history,
+
+
   });
 
   Report copyWith({ReportStatus? status, double? rating, String? feedback, List<StatusHistory>? history, String? imagePath, String? reporterNameString, String? otherCategory,}) {
@@ -155,6 +158,9 @@ class Report {
       reporterCount: map['reporterCount'] ?? 1,
       rating: map['rating'],
       imagePath: map['imagePath'],
+      userId: map['userId'],
+      feedback: map['feedback'],
+      reporterName: map['reporterName'],
       history: historyList.map((h) => StatusHistory.fromMap(h)).toList(),
     );
   }
@@ -280,6 +286,7 @@ class AppNotification {
         'isRead': isRead,
         'userId': userId,
       };
+
 
   factory AppNotification.fromFirestoreMap(Map<String, dynamic> map, String docId) =>
       AppNotification(

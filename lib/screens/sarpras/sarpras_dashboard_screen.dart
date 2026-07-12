@@ -6,7 +6,6 @@ import '../../widgets/common_widgets.dart';
 import 'package:provider/provider.dart';
 import '../../providers/report_provider.dart';
 import 'sarpras_detail_screen.dart';
-import '../publik_screen.dart';
 import '../pelapor/notif_screen.dart';
 import '../pelapor/profil_screen.dart' as profil;
 
@@ -22,7 +21,6 @@ class _SarprasDashboardScreenState extends State<SarprasDashboardScreen> {
 
   final List<Widget> _pages = [
     const _DashboardContent(),
-    const PublikScreen(),
     const NotifScreen(),
     const profil.ProfilScreen(),
   ];
@@ -43,9 +41,8 @@ class _SarprasDashboardScreenState extends State<SarprasDashboardScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _NavItem(icon: Icons.dashboard_outlined, activeIcon: Icons.dashboard, label: 'Dashboard', index: 0, current: _currentIndex, onTap: (i) => setState(() => _currentIndex = i)),
-                _NavItem(icon: Icons.campaign_outlined, activeIcon: Icons.campaign, label: 'Transparansi', index: 1, current: _currentIndex, onTap: (i) => setState(() => _currentIndex = i)),
-                _NavItem(icon: Icons.notifications_outlined, activeIcon: Icons.notifications, label: 'Notifikasi', index: 2, current: _currentIndex, onTap: (i) => setState(() => _currentIndex = i)),
-                _NavItem(icon: Icons.person_outline, activeIcon: Icons.person, label: 'Profil', index: 3, current: _currentIndex, onTap: (i) => setState(() => _currentIndex = i)),
+                _NavItem(icon: Icons.notifications_outlined, activeIcon: Icons.notifications, label: 'Notifikasi', index: 1, current: _currentIndex, onTap: (i) => setState(() => _currentIndex = i)),
+                _NavItem(icon: Icons.person_outline, activeIcon: Icons.person, label: 'Profil', index: 2, current: _currentIndex, onTap: (i) => setState(() => _currentIndex = i)),
               ],
             ),
           ),
@@ -97,8 +94,10 @@ class _DashboardContentState extends State<_DashboardContent> {
   List<Report> _filteredList(BuildContext context) {
     final allReports = context.watch<ReportProvider>().reports;
     if (_filter == 'Semua') return allReports;
-    if (_filter == 'Darurat') return allReports.where((r) => r.urgency == UrgencyLevel.darurat).toList();
-    return allReports.where((r) => r.building == _filter).toList();
+    if (_filter == 'Darurat') {
+      return allReports.where((r) => r.status == ReportStatus.darurat).toList();
+    }
+    return allReports.where((r) => r.location == _filter).toList();
   }
 
   @override
@@ -108,10 +107,13 @@ class _DashboardContentState extends State<_DashboardContent> {
     final diproses = allReports.where((r) => r.status == ReportStatus.diproses).length;
     final selesai = allReports.where((r) => r.status == ReportStatus.selesai).length;
     final darurat = allReports.where((r) => r.status == ReportStatus.darurat).length;
-
+final unreadNotif = allReports.where((r) =>
+  r.status == ReportStatus.diterima
+).length;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text('Dashboard Sarpras'),
         backgroundColor: AppColors.white,
         actions: [
@@ -119,23 +121,33 @@ class _DashboardContentState extends State<_DashboardContent> {
             padding: const EdgeInsets.only(right: 12),
             child: IconButton(
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotifScreen())),
-              icon: Stack(
-                children: [
-                  const Icon(Icons.notifications_outlined, color: AppColors.navy),
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: AppColors.red,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            icon: Stack(
+  clipBehavior: Clip.none,
+  children: [
+    const Icon(Icons.notifications_outlined, color: AppColors.navy),
+
+    if (unreadNotif > 0)
+      Positioned(
+        right: -2,
+        top: -2,
+        child: Container(
+          padding: const EdgeInsets.all(4),
+          decoration: const BoxDecoration(
+            color: AppColors.red,
+            shape: BoxShape.circle,
+          ),
+          child: Text(
+            unreadNotif > 9 ? '9+' : '$unreadNotif',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 8,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+  ],
+),
             ),
           ),
         ],
@@ -160,7 +172,7 @@ class _DashboardContentState extends State<_DashboardContent> {
               children: [
                 StatCard(value: '$diterima', label: 'Diterima', valueColor: AppColors.amber),
                 StatCard(value: '$diproses', label: 'Diproses', valueColor: AppColors.blue),
-                StatCard(value: '$selesai bln ini', label: 'Selesai Bulan Ini', valueColor: AppColors.green),
+                StatCard(value: '$selesai', label: 'Selesai Bulan Ini', valueColor: AppColors.green),
                 StatCard(value: '$darurat ⚠️', label: 'Darurat', valueColor: AppColors.red),
               ],
             ),
@@ -202,7 +214,9 @@ class _DashboardContentState extends State<_DashboardContent> {
 
 class _SarprasReportCard extends StatelessWidget {
   final Report report;
+  
   final VoidCallback onTap;
+
 
   const _SarprasReportCard({required this.report, required this.onTap});
 

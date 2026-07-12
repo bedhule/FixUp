@@ -80,17 +80,20 @@ final TextEditingController _manualCategoryController =
       MaterialPageRoute(builder: (_) => const QRScannerScreen()),
     );
     if (result != null && result is String) {
-      final parts = result.split('-');
-      if (parts.length >= 2) {
-        setState(() {
-          _selectedCampus = parts[0].trim();
-          _selectedBuilding = parts[0].trim();
-          _selectedRoom = parts[1].trim();
-          _manualCampus = false;
-          _manualBuilding = false;
-          _manualRoom = false;
-          _locationFromQr = true;
-        });
+      final parts = result.split('|');
+
+if (parts.length == 3) {
+  setState(() {
+    _selectedCampus = parts[0].trim();
+    _selectedBuilding = parts[1].trim();
+    _selectedRoom = parts[2].trim();
+
+    _manualCampus = false;
+    _manualBuilding = false;
+    _manualRoom = false;
+
+    _locationFromQr = true;
+  });
         if (mounted)
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
               content: Text('Lokasi berhasil diperbarui dari QR Code',

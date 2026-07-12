@@ -29,7 +29,7 @@ class _RatingScreenState extends State<RatingScreen> {
     setState(() => _saving = true);
     try {
       final feedback = _feedbackController.text.trim();
-      await FirebaseHelper().saveRating(widget.report.id, _rating, feedback);
+      await FirebaseHelper().saveRating(widget.report.id, _rating, feedback,);
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(
         context,

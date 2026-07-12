@@ -10,6 +10,7 @@ import 'account_settings_screen.dart';
 import '../publik_screen.dart';
 import '../../models/models.dart';
 import '../../providers/report_provider.dart';
+import '../sarpras/sarpras_riwayat_screen.dart';
 
 class ProfilScreen extends StatefulWidget {
   const ProfilScreen({super.key});
@@ -84,16 +85,38 @@ class _ProfilScreenState extends State<ProfilScreen> {
     final screenHeight = MediaQuery.of(context).size.height;
     final avatarSize =
         (MediaQuery.of(context).size.width * 0.28).clamp(80.0, 120.0);
-    const headerRatio = 0.35;
+    const headerRatio = 0.28;
     // TAMBAHAN: ambil angka unread yang sama persis dengan yang dipakai Home Screen
     final unreadCount = context.watch<NotificationProvider>().unreadCount;
     final reportProvider = context.watch<ReportProvider>();
 
-final totalLaporan = reportProvider.reports.length;
+final reports = reportProvider.reports;
 
-final selesai = reportProvider.reports
-    .where((r) => r.status == ReportStatus.selesai)
-    .length;
+final totalLaporan = reports.length;
+final reportsDenganRating = reports.where((r) =>
+    r.status == ReportStatus.selesai &&
+    r.rating != null).toList();
+
+final ratingCount = reportsDenganRating.length;
+
+final averageRating = ratingCount == 0
+    ? 0.0
+    : reportsDenganRating
+            .map((r) => r.rating!)
+            .reduce((a, b) => a + b) /
+        ratingCount;
+
+/// total laporan yang benar-benar selesai
+final totalSelesai = reports.where(
+  (r) => r.status == ReportStatus.selesai,
+).length;
+
+/// total laporan yang sedang/sudah ditangani (khusus statistik Sarpras)
+final totalHandled = reports.where(
+  (r) =>
+      r.status == ReportStatus.diproses ||
+      r.status == ReportStatus.selesai,
+).length;
 
     if (_loading) {
       return Scaffold(
@@ -224,14 +247,14 @@ final selesai = reportProvider.reports
         Expanded(
           child: Column(
             children: [
-              Text(
-                '$selesai',
-                style: GoogleFonts.manrope(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                ),
-              ),
+             Text(
+  '$totalSelesai',
+  style: GoogleFonts.manrope(
+    fontSize: 28,
+    fontWeight: FontWeight.w800,
+    color: Colors.white,
+  ),
+),
               const SizedBox(height: 4),
               Text(
                 'Selesai',
@@ -249,6 +272,86 @@ final selesai = reportProvider.reports
   ),
 ),
                   const SizedBox(height: 20),
+                  if (_role == 'Staf Sarpras') ...[
+  Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16),
+    child: Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.line),
+      ),
+      child: Column(
+        children: [
+
+          Row(
+            children: [
+              const Icon(Icons.star,
+                  color: Colors.amber, size: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Rating Kinerja",
+                      style: GoogleFonts.manrope(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Text(
+                      "$ratingCount Penilaian",
+                      style: GoogleFonts.inter(
+                        color: AppColors.muted,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                averageRating.toStringAsFixed(1),
+                style: GoogleFonts.manrope(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.amber.shade700,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+Center(
+  child: Column(
+    children: [
+      Text(
+        "$totalHandled",
+        style: GoogleFonts.manrope(
+          fontSize: 30,
+          fontWeight: FontWeight.w800,
+          color: AppColors.primary,
+        ),
+      ),
+      const SizedBox(height: 4),
+      Text(
+        "Laporan Ditangani",
+        style: GoogleFonts.inter(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ],
+  ),
+),
+        ],
+      ),
+    ),
+  ),
+
+  const SizedBox(height: 20),
+],
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
@@ -258,14 +361,20 @@ final selesai = reportProvider.reports
                     ),
                     child: Column(
                       children: [
-                        _MenuItem(
-                          icon: Icons.list_alt_outlined,
-                          label: 'Riwayat Laporan Saya',
-                          onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => const RiwayatScreen())),
-                        ),
+                       _MenuItem(
+  icon: Icons.list_alt_outlined,
+  label: _role == 'Staf Sarpras'
+      ? 'Riwayat Laporan'
+      : 'Riwayat Laporan Saya',
+  onTap: () => Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => _role == 'Staf Sarpras'
+          ? const SarprasRiwayatScreen()
+          : const RiwayatScreen(),
+    ),
+  ),
+),
                         const Divider(height: 1, color: AppColors.line),
                         _MenuItem(
                           icon: Icons.notifications_outlined,
