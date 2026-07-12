@@ -6,7 +6,6 @@ import '../../widgets/common_widgets.dart';
 import 'dart:io';
 import 'package:provider/provider.dart';
 import '../../providers/report_provider.dart';
-import '../../providers/notification_provider.dart';
 import '../../firebase/firebase_helper.dart';
 import 'sukses_screen.dart';
 
@@ -60,14 +59,11 @@ class _PreviewScreenState extends State<PreviewScreen> {
       );
 
       final reportProvider = context.read<ReportProvider>();
-      final notifProvider = context.read<NotificationProvider>();
-
+      final navigator = Navigator.of(context);
       await reportProvider.addReport(reportWithUser);
-      notifProvider.notifyReportCreated(reportWithUser);
 
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
+      navigator.pushReplacement(
         MaterialPageRoute(builder: (_) => SuksesScreen(report: reportWithUser)),
       );
     } catch (e) {

@@ -16,7 +16,9 @@ class DetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fmt = DateFormat('d MMM, HH:mm', 'id_ID');
-    final hasImage = report.imagePath != null;
+    print("===== DETAIL SCREEN =====");
+print(report.imagePath);
+print(report.imagePath?.startsWith("http"));
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -38,45 +40,64 @@ class DetailScreen extends StatelessWidget {
           children: [
             // Photo
             GestureDetector(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => PhotoPreviewScreen(imagePath: report.imagePath)),
-              ),
-              child: Container(
-                height: 180,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  image: hasImage && report.imagePath!.isNotEmpty
-                      ? DecorationImage(
-                          image: FileImage(File(report.imagePath!)),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
-                  color: hasImage && report.imagePath!.isNotEmpty ? null : AppColors.primaryLight,
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PhotoPreviewScreen(
+          imagePath: report.imagePath,
+        ),
+      ),
+    );
+  },
+  child: Container(
+    margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+    height: 180,
+    width: double.infinity,
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(16),
+      color: AppColors.primaryLight,
+    ),
+    clipBehavior: Clip.antiAlias,
+    child: report.imagePath != null &&
+            report.imagePath!.isNotEmpty
+        ? report.imagePath!.startsWith("http")
+            ? Image.network(
+                report.imagePath!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const Center(
+                  child: Icon(Icons.broken_image, size: 40),
                 ),
-                margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                child: hasImage && report.imagePath!.isNotEmpty
-                    ? null
-                    : Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.camera_alt_outlined, color: AppColors.primary, size: 32),
-                            const SizedBox(height: 6),
-                            Text(
-                              'Ketuk untuk lihat foto',
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-              ),
+              )
+            : Image.file(
+                File(report.imagePath!),
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const Center(
+                  child: Icon(Icons.broken_image, size: 40),
+                ),
+              )
+        : Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.camera_alt_outlined,
+                  size: 32,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Belum ada foto",
+                  style: GoogleFonts.inter(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
+          ),
+  ),
+),
             const SizedBox(height: 16),
             // Title & badge
             Padding(

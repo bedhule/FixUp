@@ -17,13 +17,23 @@ class LaporScreen extends StatefulWidget {
 
 class _LaporScreenState extends State<LaporScreen>
     with SingleTickerProviderStateMixin {
-  String _selectedBuilding = 'Gedung B';
-  String _selectedRoom = 'Ruang 301';
-  bool _manualBuilding = false;
-  bool _manualRoom = false;
-  final _manualBuildingController = TextEditingController();
-  final _manualRoomController = TextEditingController();
+  String _selectedCampus = 'Kampus I';
+String _selectedBuilding = 'Gedung B';
+String _selectedRoom = 'Ruang 301';
+
+bool _manualCampus = false;
+bool _manualBuilding = false;
+bool _manualRoom = false;
+
+final _manualCampusController = TextEditingController();
+final _manualBuildingController = TextEditingController();
+final _manualRoomController = TextEditingController();
   ReportCategory? _selectedCategory;
+  final TextEditingController _otherCategoryController =
+    TextEditingController();
+  bool _manualCategory = false;
+final TextEditingController _manualCategoryController =
+    TextEditingController();
   UrgencyLevel? _selectedUrgency;
   final _descController = TextEditingController();
   bool _photoAttached = false;
@@ -73,8 +83,10 @@ class _LaporScreenState extends State<LaporScreen>
       final parts = result.split('-');
       if (parts.length >= 2) {
         setState(() {
+          _selectedCampus = parts[0].trim();
           _selectedBuilding = parts[0].trim();
           _selectedRoom = parts[1].trim();
+          _manualCampus = false;
           _manualBuilding = false;
           _manualRoom = false;
           _locationFromQr = true;
@@ -94,10 +106,22 @@ class _LaporScreenState extends State<LaporScreen>
     }
   }
 
+  String get _effectiveCampus =>
+    _manualCampus ? _manualCampusController.text : _selectedCampus;
   String get _effectiveBuilding =>
       _manualBuilding ? _manualBuildingController.text : _selectedBuilding;
   String get _effectiveRoom =>
       _manualRoom ? _manualRoomController.text : _selectedRoom;
+
+static const _campuses = [
+  'Kampus I',
+  'Kampus II',
+  'Kampus III',
+  'Kampus IV',
+  'Kampus V',
+  'Kampus VI',
+  'Lokasi Lain',
+];
 
   static const _buildings = [
     'Gedung A',
@@ -125,26 +149,34 @@ class _LaporScreenState extends State<LaporScreen>
 
   void _submit() {
     if (_selectedCategory == null ||
-        _selectedUrgency == null ||
-        _descController.text.isEmpty) {
+    _selectedUrgency == null ||
+    _descController.text.isEmpty ||
+    (_selectedCategory == ReportCategory.lainnya &&
+        _otherCategoryController.text.trim().isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Silakan lengkapi form terlebih dahulu')));
       return;
     }
-    if ((_manualBuilding && _manualBuildingController.text.isEmpty) ||
+    if ((_manualCampus && _manualCampusController.text.isEmpty) ||
+        (_manualBuilding && _manualBuildingController.text.isEmpty) ||
         (_manualRoom && _manualRoomController.text.isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Lengkapi lokasi manual terlebih dahulu')));
       return;
     }
 
+    final effectiveCampus = _effectiveCampus;
     final effectiveBuilding = _effectiveBuilding;
     final effectiveRoom = _effectiveRoom;
     final floor = effectiveRoom.contains('Lt.')
         ? effectiveRoom.replaceAll(RegExp(r'.*Lt\.\s*'), 'Lt. ')
         : 'Lt. 1';
-    final location = '$effectiveBuilding · $effectiveRoom';
+    final location = '$effectiveCampus ·$effectiveBuilding · $effectiveRoom';
 
+    final kategoriLaporan =
+    _manualCategory
+        ? _manualCategoryController.text
+        : _selectedCategory!.label;
     final report = Report(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       title: '${_selectedCategory!.label} - $effectiveBuilding',
@@ -152,6 +184,9 @@ class _LaporScreenState extends State<LaporScreen>
       building: effectiveBuilding,
       floor: floor,
       category: _selectedCategory!,
+      otherCategory: _selectedCategory == ReportCategory.lainnya
+    ? _otherCategoryController.text.trim()
+    : null,
       urgency: _selectedUrgency!,
       status: _selectedUrgency == UrgencyLevel.darurat
           ? ReportStatus.darurat
@@ -177,13 +212,17 @@ class _LaporScreenState extends State<LaporScreen>
   }
 
   @override
-  void dispose() {
-    _manualBuildingController.dispose();
-    _manualRoomController.dispose();
-    _descController.dispose();
-    _pulseController.dispose();
-    super.dispose();
-  }
+void dispose() {
+  _manualBuildingController.dispose();
+  _manualRoomController.dispose();
+
+  _manualCategoryController.dispose();
+
+  _descController.dispose();
+  _otherCategoryController.dispose();
+  _pulseController.dispose();
+  super.dispose();
+}
 
   @override
   Widget build(BuildContext context) {
@@ -203,76 +242,179 @@ class _LaporScreenState extends State<LaporScreen>
                   const SectionLabel('Foto Kerusakan'),
                   _buildPhotoUpload(),
                   const SectionLabel('Kategori Kerusakan'),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: ReportCategory.values.map((cat) {
-                      final selected = _selectedCategory == cat;
-                      return GestureDetector(
-                        onTap: () => setState(() => _selectedCategory = cat),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          // FIX: curve overshoot (easeOutBack) + boxShadow
-                          // yang di-tween menyebabkan blurRadius sempat
-                          // negatif dan crash ("Text shadow blur radius
-                          // should be non-negative"). Ganti ke curve yang
-                          // tidak overshoot.
-                          curve: Curves.easeOutCubic,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: selected ? AppColors.navy : AppColors.white,
-                            border: Border.all(
-                              color: selected ? AppColors.navy : AppColors.line,
-                              width: selected ? 2 : 1.5,
-                            ),
-                            borderRadius: BorderRadius.circular(999),
-                            // FIX: boxShadow sekarang SELALU ada (tidak lagi
-                            // di-toggle null <-> list) supaya DecorationTween
-                            // tidak pernah men-scale dari/menuju null, hanya
-                            // beda opacity & blur — aman dari assertion.
-                            boxShadow: [
-                              BoxShadow(
-                                color:
-                                    (selected ? AppColors.navy : Colors.black)
-                                        .withOpacity(selected ? 0.18 : 0.04),
-                                blurRadius: selected ? 10 : 4,
-                                offset: Offset(0, selected ? 4 : 2),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(_categoryEmoji(cat.label),
-                                  style: const TextStyle(fontSize: 14)),
-                              const SizedBox(width: 6),
-                              Text(
-                                cat.label,
-                                style: GoogleFonts.inter(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w600,
-                                  color:
-                                      selected ? Colors.white : AppColors.slate,
-                                ),
-                              ),
-                              AnimatedSize(
-                                duration: const Duration(milliseconds: 180),
-                                curve: Curves.easeOutCubic,
-                                child: selected
-                                    ? const Padding(
-                                        padding: EdgeInsets.only(left: 6),
-                                        child: Icon(Icons.check_circle_rounded,
-                                            size: 14, color: Colors.white),
-                                      )
-                                    : const SizedBox.shrink(),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                 Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+
+   Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+
+    Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: ReportCategory.values.map((cat) {
+
+        final selected = _selectedCategory == cat;
+
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              _selectedCategory = cat;
+
+              if (cat != ReportCategory.lainnya) {
+                _otherCategoryController.clear();
+              }
+            });
+          },
+
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 10),
+
+            decoration: BoxDecoration(
+              color: selected
+                  ? AppColors.navy
+                  : AppColors.white,
+
+              border: Border.all(
+                color: selected
+                    ? AppColors.navy
+                    : AppColors.line,
+                width: selected ? 2 : 1.5,
+              ),
+
+              borderRadius: BorderRadius.circular(999),
+
+              boxShadow: [
+                BoxShadow(
+                  color: (selected
+                          ? AppColors.navy
+                          : Colors.black)
+                      .withOpacity(selected ? 0.18 : 0.04),
+                  blurRadius: selected ? 10 : 4,
+                  offset: Offset(0, selected ? 4 : 2),
+                ),
+              ],
+            ),
+
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+
+                Text(
+                  _categoryEmoji(cat.label),
+                  style: const TextStyle(fontSize: 14),
+                ),
+
+                const SizedBox(width: 6),
+
+                Text(
+                  cat.label,
+                  style: GoogleFonts.inter(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: selected
+                        ? Colors.white
+                        : AppColors.slate,
                   ),
+                ),
+
+                if (selected)
+                  const Padding(
+                    padding: EdgeInsets.only(left: 6),
+                    child: Icon(
+                      Icons.check_circle,
+                      size: 14,
+                      color: Colors.white,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    ),
+
+    if (_selectedCategory == ReportCategory.lainnya) ...[
+      const SizedBox(height: 15),
+
+      TextField(
+        controller: _otherCategoryController,
+
+        decoration: InputDecoration(
+          hintText: "Tuliskan jenis kerusakan",
+
+          filled: true,
+          fillColor: Colors.white,
+
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide(
+              color: AppColors.primary,
+              width: 2,
+            ),
+          ),
+        ),
+      ),
+    ],
+  ],
+),
+
+    if (_manualCategory)
+
+      Padding(
+
+        padding: const EdgeInsets.only(top: 14),
+
+        child: TextField(
+
+          controller: _manualCategoryController,
+
+          decoration: InputDecoration(
+
+            hintText: "Masukkan kategori kerusakan",
+
+            filled: true,
+
+            fillColor: Colors.white,
+
+            prefixIcon: const Icon(Icons.edit),
+
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(
+                  color: AppColors.primary,
+                  width: 2),
+            ),
+
+          ),
+
+        ),
+
+      )
+
+  ],
+),
                   const SectionLabel('Tingkat Urgensi'),
                   Row(
                     children: UrgencyLevel.values.map((u) {
@@ -578,7 +720,7 @@ class _LaporScreenState extends State<LaporScreen>
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      '$_effectiveBuilding - $_effectiveRoom',
+                      '$_effectiveCampus - $_effectiveBuilding - $_effectiveRoom',
                       style: GoogleFonts.manrope(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -630,6 +772,36 @@ class _LaporScreenState extends State<LaporScreen>
             ],
           ),
           const SizedBox(height: 16),
+          _buildLocationFieldCard(
+  icon: Icons.location_city_rounded,
+  label: 'Kampus',
+  value: _selectedCampus,
+  items: _campuses,
+  isManual: _manualCampus,
+  controller: _manualCampusController,
+  accentColor: const Color(0xFF06B6D4),
+  bgColor: const Color(0xFFEFFBFF),
+  borderColor: const Color(0xFFC8F2FF),
+  onDropdownChanged: (v) {
+    setState(() {
+      if (v == 'Lokasi Lain') {
+        _manualCampus = true;
+      } else {
+        _selectedCampus = v!;
+      }
+      _locationFromQr = false;
+    });
+  },
+  onToggleManual: () => setState(() {
+    _manualCampus = !_manualCampus;
+    if (!_manualCampus) {
+      _manualCampusController.clear();
+    }
+    _locationFromQr = false;
+  }),
+),
+
+const SizedBox(height: 12),
           _buildLocationFieldCard(
             icon: Icons.apartment_rounded,
             label: 'Gedung',
@@ -758,17 +930,17 @@ class _LaporScreenState extends State<LaporScreen>
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 10),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(12),
                         borderSide:
                             BorderSide(color: accentColor.withOpacity(0.4)),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(12),
                         borderSide:
                             BorderSide(color: accentColor.withOpacity(0.4)),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(color: accentColor, width: 1.5),
                       ),
                       hintText: 'Tulis $label secara manual',
@@ -777,39 +949,61 @@ class _LaporScreenState extends State<LaporScreen>
                     ),
                     onChanged: (_) => setState(() {}),
                   )
-                : Container(
-                    key: ValueKey('dropdown-$label'),
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: accentColor.withOpacity(0.4)),
-                    ),
-                    child: DropdownButtonFormField<String>(
-                      initialValue: value,
-                      isExpanded: true,
-                      icon: Icon(Icons.keyboard_arrow_down_rounded,
-                          color: accentColor),
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 10),
-                      ),
-                      style: GoogleFonts.inter(
-                          fontSize: 13.5,
-                          color: AppColors.slate,
-                          fontWeight: FontWeight.w600),
-                      items: items
-                          .map((v) => DropdownMenuItem(
-                              value: v,
-                              child: Text(v, overflow: TextOverflow.ellipsis)))
-                          .toList(),
-                      // Memilih "Lokasi Lain" pada dropdown akan otomatis
-                      // beralih ke mode isi manual (lihat onDropdownChanged
-                      // di pemanggil) sehingga keyboard bisa langsung dipakai.
-                      onChanged: onDropdownChanged,
-                    ),
-                  ),
+                :  DropdownButtonFormField<String>(
+    key: ValueKey('dropdown-$label'),
+    value: value,
+    isExpanded: true,
+    icon: Icon(
+      Icons.keyboard_arrow_down_rounded,
+      color: accentColor,
+    ),
+    decoration: InputDecoration(
+      filled: true,
+      fillColor: Colors.white,
+
+      isDense: true,
+
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 14,
+        vertical: 14,
+      ),
+
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(
+          color: accentColor.withOpacity(0.35),
+        ),
+      ),
+
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(
+          color: accentColor,
+          width: 1.8,
+        ),
+      ),
+    ),
+
+    style: GoogleFonts.inter(
+      fontSize: 13.5,
+      color: AppColors.slate,
+      fontWeight: FontWeight.w600,
+    ),
+
+    dropdownColor: Colors.white,
+
+    items: items.map((v) {
+      return DropdownMenuItem(
+        value: v,
+        child: Text(
+          v,
+          overflow: TextOverflow.ellipsis,
+        ),
+      );
+    }).toList(),
+
+    onChanged: onDropdownChanged,
+),
           ),
         ],
       ),

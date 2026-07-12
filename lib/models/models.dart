@@ -60,6 +60,7 @@ class Report {
   final String building;
   final String floor;
   final ReportCategory category;
+  final String? otherCategory;
   final UrgencyLevel urgency;
   final ReportStatus status;
   final String description;
@@ -79,6 +80,7 @@ class Report {
     required this.building,
     required this.floor,
     required this.category,
+    this.otherCategory,
     required this.urgency,
     required this.status,
     required this.description,
@@ -92,7 +94,7 @@ class Report {
     required this.history,
   });
 
-  Report copyWith({ReportStatus? status, double? rating, String? feedback, List<StatusHistory>? history, String? imagePath, String? reporterName}) {
+  Report copyWith({ReportStatus? status, double? rating, String? feedback, List<StatusHistory>? history, String? imagePath, String? reporterNameString, String? otherCategory,}) {
     return Report(
       id: id,
       title: title,
@@ -100,6 +102,7 @@ class Report {
       building: building,
       floor: floor,
       category: category,
+      otherCategory: otherCategory ?? this.otherCategory,
       urgency: urgency,
       status: status ?? this.status,
       description: description,
@@ -123,6 +126,7 @@ class Report {
       'building': building,
       'floor': floor,
       'category': category.name,
+      'otherCategory': otherCategory,
       'urgency': urgency.name,
       'status': status.name,
       'description': description,
@@ -143,6 +147,7 @@ class Report {
       building: map['building'],
       floor: map['floor'],
       category: ReportCategory.values.firstWhere((e) => e.name == map['category']),
+      otherCategory: map['otherCategory'],
       urgency: UrgencyLevel.values.firstWhere((e) => e.name == map['urgency']),
       status: ReportStatus.values.firstWhere((e) => e.name == map['status']),
       description: map['description'],
@@ -161,6 +166,7 @@ class Report {
       'building': building,
       'floor': floor,
       'category': category.name,
+      'otherCategory': otherCategory,
       'urgency': urgency.name,
       'status': status.name,
       'description': description,
@@ -186,6 +192,8 @@ class Report {
         (e) => e.name == map['category'],
         orElse: () => ReportCategory.lainnya,
       ),
+
+      otherCategory: map['otherCategory'],
       urgency: UrgencyLevel.values.firstWhere(
         (e) => e.name == map['urgency'],
         orElse: () => UrgencyLevel.ringan,

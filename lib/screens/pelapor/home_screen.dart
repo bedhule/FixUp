@@ -93,34 +93,53 @@ class _FloatingBottomNav extends StatelessWidget {
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _NavIcon(
-                      icon: Icons.home_outlined,
-                      activeIcon: Icons.home,
-                      isActive: currentIndex == 0,
-                      onTap: () => onTap(0),
-                    ),
-                    _NavIcon(
-                      icon: Icons.description_outlined,
-                      activeIcon: Icons.description,
-                      isActive: currentIndex == 1,
-                      onTap: () => onTap(1),
-                    ),
-                    _NavIcon(
-                      icon: Icons.notifications_outlined,
-                      activeIcon: Icons.notifications,
-                      isActive: currentIndex == 2,
-                      onTap: () => onTap(2),
-                    ),
-                    _NavIcon(
-                      icon: Icons.person_outline,
-                      activeIcon: Icons.person,
-                      isActive: currentIndex == 3,
-                      onTap: () => onTap(3),
-                    ),
-                  ],
-                ),
+  children: [
+    Expanded(
+      child: Center(
+        child: _NavIcon(
+          icon: Icons.home_outlined,
+          activeIcon: Icons.home,
+          isActive: currentIndex == 0,
+          onTap: () => onTap(0),
+        ),
+      ),
+    ),
+    Expanded(
+      child: Center(
+        child: _NavIcon(
+          icon: Icons.description_outlined,
+          activeIcon: Icons.description,
+          isActive: currentIndex == 1,
+          onTap: () => onTap(1),
+        ),
+      ),
+    ),
+
+    // Ruang khusus untuk FloatingActionButton (+)
+    const SizedBox(width: 72),
+
+    Expanded(
+      child: Center(
+        child: _NavIcon(
+          icon: Icons.notifications_outlined,
+          activeIcon: Icons.notifications,
+          isActive: currentIndex == 2,
+          onTap: () => onTap(2),
+        ),
+      ),
+    ),
+    Expanded(
+      child: Center(
+        child: _NavIcon(
+          icon: Icons.person_outline,
+          activeIcon: Icons.person,
+          isActive: currentIndex == 3,
+          onTap: () => onTap(3),
+        ),
+      ),
+    ),
+  ],
+),
               ),
             ),
             // Tombol "+" menonjol di atas bar — tetap membuka LaporScreen (index 1)
@@ -248,13 +267,24 @@ class _HomeContentState extends State<_HomeContent> {
       children: [
         // ---- Header gradasi (tetap ada avatar inisial user, logic sama) ----
         Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.primary, AppColors.headerEnd],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-          ),
+          decoration: BoxDecoration(
+  gradient: LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [
+      const Color(0xFF036B71),
+      AppColors.headerEnd,
+      AppColors.headerEnd.withOpacity(0.7),
+      Colors.white,
+    ],
+    stops: const [
+      0.0,
+      0.55,
+      0.85,
+      1.0,
+    ],
+  ),
+),
           child: SafeArea(
             bottom: false,
             child: Padding(

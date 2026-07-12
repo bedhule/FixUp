@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/models.dart';
 import '../firebase/firebase_helper.dart';
@@ -5,29 +6,57 @@ import '../firebase/firebase_helper.dart';
 class NotificationProvider with ChangeNotifier {
   List<AppNotification> _notifications = [];
 
+  // TAMBAHAN: simpan subscription supaya bisa di-cancel & di-subscribe ulang
+  // setiap kali user login/logout, bukan cuma sekali di awal aplikasi.
+  StreamSubscription<List<AppNotification>>? _notifSubscription;
+  StreamSubscription<dynamic>? _authSubscription;
+
   List<AppNotification> get notifications => List.unmodifiable(_notifications);
   int get unreadCount => _notifications.where((n) => !n.isRead).length;
 
   NotificationProvider() {
-    _init();
+    _listenToAuthChanges();
   }
 
-  Future<void> _init() async {
-    final uid = FirebaseHelper().currentUser?.uid;
-    if (uid != null) {
-      FirebaseHelper().getNotificationsStream(uid).listen(
-        (list) {
-          _notifications = list;
-          notifyListeners();
-        },
-        onError: (e) {
-          debugPrint('[NotificationProvider] Stream error: $e');
-        },
-      );
-    } else {
-      _notifications = List.from(sampleNotifications);
-      notifyListeners();
-    }
+  // FIX UTAMA: dengarkan perubahan status login (bukan cuma baca uid sekali saja).
+  // Setiap kali user logout/login (termasuk ganti akun Pelapor <-> Sarpras),
+  // stream notifikasi lama di-cancel dan disubscribe ulang ke uid yang baru.
+  // Ini memperbaiki bug: sebelumnya kalau stream sempat error (misalnya
+  // permission-denied saat logout), stream itu mati permanen dan notifikasi
+  // baru tidak akan pernah muncul lagi sampai aplikasi di-restart total.
+  void _listenToAuthChanges() {
+    _authSubscription = FirebaseHelper().authStateChanges.listen((user) {
+      debugPrint('[NotificationProvider] authStateChanges: uid=${user?.uid}');
+      _notifSubscription?.cancel();
+      _notifSubscription = null;
+
+      if (user != null) {
+        _subscribeToNotifications(user.uid);
+      } else {
+        // Guest / belum login: pakai sample data seperti sebelumnya
+        _notifications = List.from(sampleNotifications);
+        notifyListeners();
+      }
+    });
+  }
+
+  void _subscribeToNotifications(String uid) {
+    _notifSubscription = FirebaseHelper().getNotificationsStream(uid).listen(
+      (list) {
+        _notifications = list;
+        notifyListeners();
+      },
+      onError: (e) {
+        debugPrint('[NotificationProvider] Stream error: $e');
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _notifSubscription?.cancel();
+    _authSubscription?.cancel();
+    super.dispose();
   }
 
   void addNotification(AppNotification notif, {String? targetUserId}) {

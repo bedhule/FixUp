@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart'; // TAMBAHAN
 import '../../theme/app_theme.dart';
-import '../../widgets/common_widgets.dart';
 import '../../firebase/firebase_helper.dart';
 import '../../providers/notification_provider.dart'; // TAMBAHAN
 import 'riwayat_screen.dart';
 import 'notif_screen.dart';
 import 'account_settings_screen.dart';
 import '../publik_screen.dart';
+import '../../models/models.dart';
+import '../../providers/report_provider.dart';
 
 class ProfilScreen extends StatefulWidget {
   const ProfilScreen({super.key});
@@ -86,6 +87,13 @@ class _ProfilScreenState extends State<ProfilScreen> {
     const headerRatio = 0.35;
     // TAMBAHAN: ambil angka unread yang sama persis dengan yang dipakai Home Screen
     final unreadCount = context.watch<NotificationProvider>().unreadCount;
+    final reportProvider = context.watch<ReportProvider>();
+
+final totalLaporan = reportProvider.reports.length;
+
+final selesai = reportProvider.reports
+    .where((r) => r.status == ReportStatus.selesai)
+    .length;
 
     if (_loading) {
       return Scaffold(
@@ -174,20 +182,72 @@ class _ProfilScreenState extends State<ProfilScreen> {
                   ),
                   const SizedBox(height: 20),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: [
-                        const Expanded(
-                            child: StatCard(value: '4', label: 'Laporan')),
-                        SizedBox(width: 10),
-                        Expanded(
-                            child:
-                                StatCard(value: '4.75★', label: 'Avg Rating')),
-                        SizedBox(width: 10),
-                        Expanded(child: StatCard(value: '2', label: 'Selesai')),
-                      ],
-                    ),
-                  ),
+  padding: const EdgeInsets.symmetric(horizontal: 16),
+  child: Container(
+    padding: const EdgeInsets.symmetric(vertical: 18),
+    decoration: BoxDecoration(
+      color: AppColors.primary,
+      borderRadius: BorderRadius.circular(18),
+    ),
+    child: Row(
+      children: [
+        Expanded(
+          child: Column(
+            children: [
+              Text(
+                '$totalLaporan',
+                style: GoogleFonts.manrope(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Total Laporan',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        Container(
+          width: 1,
+          height: 40,
+          color: Colors.white24,
+        ),
+
+        Expanded(
+          child: Column(
+            children: [
+              Text(
+                '$selesai',
+                style: GoogleFonts.manrope(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Selesai',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  ),
+),
                   const SizedBox(height: 20),
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 16),

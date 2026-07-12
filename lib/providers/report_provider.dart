@@ -59,14 +59,17 @@ class ReportProvider with ChangeNotifier {
 
   Future<void> updateReport(Report report) async {
     try {
-      // TAMBAHAN: simpan status lama sebelum di-update, untuk dibandingkan setelahnya
-      final oldReport = _reports.firstWhere(
-        (r) => r.id == report.id,
-        orElse: () => report,
-      );
+      // Simpan status lama sebelum di-update, untuk dibandingkan setelahnya
+      Report? oldReport;
+      for (final r in _reports) {
+        if (r.id == report.id) {
+          oldReport = r;
+          break;
+        }
+      }
       await FirebaseHelper().updateReport(report);
-      if (oldReport.status != report.status) {
-        _notificationProvider?.notifyStatusChanged(report, oldReport.status); // TAMBAHAN
+      if (oldReport != null && oldReport.status != report.status) {
+        _notificationProvider?.notifyStatusChanged(report, oldReport.status);
       }
     } catch (e) {
       rethrow;
