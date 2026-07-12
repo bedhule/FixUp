@@ -173,10 +173,6 @@ static const _campuses = [
         : 'Lt. 1';
     final location = '$effectiveCampus ·$effectiveBuilding · $effectiveRoom';
 
-    final kategoriLaporan =
-    _manualCategory
-        ? _manualCategoryController.text
-        : _selectedCategory!.label;
     final report = Report(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       title: '${_selectedCategory!.label} - $effectiveBuilding',
