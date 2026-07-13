@@ -346,24 +346,7 @@ class _HomeContentState extends State<_HomeContent> {
                       ),
                     ],
                   ),
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity( 0.18),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Center(
-                      child: Text(
-                        displayInitials,
-                        style: GoogleFonts.manrope(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
+                
                 ],
               ),
             ),
@@ -689,7 +672,7 @@ class _EmptyReportsPlaceholder extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(Icons.inbox_outlined, size: 34, color: AppColors.muted),
+          const Icon(Icons.inbox_outlined, size: 34, color: AppColors.muted),
           const SizedBox(height: 8),
           Text(
             'Belum ada laporan',

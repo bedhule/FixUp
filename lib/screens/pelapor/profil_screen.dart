@@ -119,9 +119,9 @@ final totalHandled = reports.where(
 ).length;
 
     if (_loading) {
-      return Scaffold(
+      return const Scaffold(
         backgroundColor: AppColors.background,
-        body: const Center(child: CircularProgressIndicator()),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
